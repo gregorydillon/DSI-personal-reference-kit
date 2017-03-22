@@ -1,8 +1,12 @@
 import pandas as pd
+
 HOSPITAL_DATA = pd.read_csv("data/hospital-costs.csv")
 
-def expanded_financials(hospital_data):
 
+def expanded_financials(hospital_data):
+    '''
+        Return a copy of a provided DataFrame, hospital_data.
+    '''
     clone = hospital_data.copy()
     clone['Total Charges'] = clone['Mean Charge'] * clone['Discharges']
     clone['Total Costs'] = clone['Mean Cost'] * clone['Discharges']
@@ -10,7 +14,11 @@ def expanded_financials(hospital_data):
 
     return clone
 
+
 def discharges_by_description(hospital_data):
+    '''
+        Return a DataFrame grouped by APR DRG Description
+    '''
     return hospital_data.groupby('APR DRG Description').sum()['Discharges']
 
 
