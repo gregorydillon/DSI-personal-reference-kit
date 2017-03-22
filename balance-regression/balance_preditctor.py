@@ -1,10 +1,9 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-import statsmodels.formula.api as smf
 import statsmodels.api as sm
 
+OUTPUT_DIR = 'output/'
 
 def main():
     # Grab the data
@@ -20,24 +19,38 @@ def main():
         'African American': 2
     })
 
-    generate_initial_report(balance_data, 3)
+    generate_initial_report(balance_data, 3, "balance_report")
 
     # Prepare for regression, balance_series == y, training_data == x
     training_data = balance_data[balance_data.columns[1:-1]]  # Slice off id and balance
     balance_series = balance_data.Balance
 
+    # reduced model
+    relevant_cols = ['Income', 'Rating', 'Age', 'Student']
+    build_regression_report('inc_age_rating_student', relevant_cols, training_data, balance_series)
 
-def generate_initial_report(df, plot_size_scalar):
+    relevant_cols = ['Rating']
+    build_regression_report('rating_only', relevant_cols, training_data, balance_series)
+
+    # Trimming due to hella 0's, we found a reasonable cuttoff in rating at 230
+    # (by looking at the scatter plot of it.)
+    trimmed_training = training_data.copy()
+    trimmed_training['Balance'] = balance_series
+    trimmed_training = trimmed_training[trimmed_training['Rating'] >= 230]
+    trimmed_balance_series = trimmed_training['Balance']
+    del trimmed_training['Balance']
+
+    relevant_cols = ['Income', 'Rating', 'Age', 'Student']
+    build_regression_report('trimmed', relevant_cols, trimmed_training, trimmed_balance_series)
+
+
+def generate_initial_report(df, plot_size_scalar, report_name):
     '''
         Print some initial summary data about our dataframe, plot a scatter_matrix,
         and several box-plots / violin plots.
     '''
-    # Generate text from pd summary data
-    report = PdfPages('balance_report.pdf')
-    text_fig, ax_list = plt.subplots()
-    text_fig.text(.1, .1, df.info())
-    text_fig.text(.2, .2, df.head(5))
-    report.savefig(text_fig)
+    # make the pdf
+    report = PdfPages(OUTPUT_DIR + report_name + '.pdf')
 
     # Generate a scatter matrix
     c_count = len(df.columns)
@@ -52,6 +65,13 @@ def generate_initial_report(df, plot_size_scalar):
 
 
 def box_plots(df, plot_width, plot_height):
+    '''
+        Provided a dataframe, create a figure which has for each column:
+         * a violin plot
+         * a box plot
+
+         return that figure.
+    '''
     c_count = len(df.columns)
 
     fig, ax_list = plt.subplots(int(len(df.columns) / 2), 2,
@@ -68,91 +88,71 @@ def box_plots(df, plot_width, plot_height):
     return fig
 
 
-def uncategoriezed():
-    #3
-    dummies = pd.get_dummies(training_data.Ethnicity.rename(columns = lambda training_data: "Ethnicity_{}".format(training_data)))
-    training_data = pd.concat([training_data,dummies],axis=1)
-    del training_data['African American']
-    del training_data['Ethnicity']
+def build_model(y, x, add_constant=True):
+    '''
+        Build a linear regression model from the provided data
 
-    #4
+        Provided:
+        y: a series or single column dataframe holding our solution vector for linear regression
+        x: a dataframe that runs parallel to y, with all the features for our linear regression
+        add_constant: a boolean, if true it will add a constant row to our provided x data. Otherwise
+                      this method assumes you've done-so already, or do not want one for some good reason
 
-    def build_model(balance_series,data, constant=True):
-        if constant:
-            data = sm.add_constant(data)
+        Return: a linear regression model from StatsModels and the data which was used to train the model.
+                If add_constant was true this will be a new dataframe, otherwise it will be x
+    '''
+    if add_constant:
+        x = sm.add_constant(x)
 
-        model = sm.OLS(balance_series,data).fit()
-        return (model, data)
-
-    def build_f_model(data, formula):
-        model = smf.ols(data=data, forumla=formula)
-        model = model.fit()
-        return model
-
-    def plot_resid(model,data):
-        fig, ax_list = plt.subplots(1, 2)
-        y_hat = model.predict(data)
-        resid = model.outlier_test()['student_resid']
-        ax_list[0].scatter(y_hat,resid)
-        ax_list[0].axhline(0, linestyle='--')
-        sm.qqplot(resid, line='s', ax=ax_list[1])
+    model = sm.OLS(y, x).fit()
+    return (model, x)
 
 
-    model, data = build_model(balance_series,training_data,True)
-    model.summary()
-    plot_resid(model,data)
+def plot_resid(model, x):
+    '''
+        Given a trained StatsModel linear regression model, plot the residual error
+        in a scatter plot as well as a qqplot
 
-    #5
-    columns = training_data.columns.values
-    #
-    # model, data = build_model(balance_series,training_data.filter(['Income', 'Rating', 'Cards', 'Age', 'Education', 'Gender',
-    #        'Student', 'Married', 'Asian', 'Caucasian']),True)
-    # model.summary()
-    # plot_resid(model,data)
+        model: a trained StatsModel linear regression model.
+        x: the input data which was used to train the model.
 
-    # reduced model
-    model, data = build_model(balance_series,training_data.filter(['Income', 'Rating', 'Age', 'Student']),True)
-    print model.summary()
-    plot_resid(model,data)
+        returns: the figure upon which the residuals were drawn
+    '''
+    fig, ax_list = plt.subplots(1, 2)
 
-    plt.hist(balance_series,bins=100)
+    y_hat = model.predict(x)
+    resid = model.outlier_test()['student_resid']
 
-    # This was just us playing to figure out what a good limit was
-    # 8
-    test = training_data.copy()
-    test['Balance'] = balance_series
-    test = test[ test['Rating'] >= 230]
-    tmp = test.copy()
-    balance_series = test['Balance']
-    del test['Balance']
+    ax_list[0].scatter(y_hat, resid, alpha=.2)
+    ax_list[0].axhline(0, linestyle='--')
+    sm.qqplot(resid, line='s', ax=ax_list[1])
 
-    #9
-    model, data = build_model(balance_series,test.filter(['Income', 'Rating', 'Age', 'Student']),True)
-    print model.summary()
-    plot_resid(model,data)
-    #
-    # for c_name in tmp.columns.values:
-    #     try:
-    #         tmp.plot(kind='scatter', balance_series='Balance', training_data=c_name, edgecolor='none', figsize=(12, 5))
-    #     except:
-    #         pass
+    fig.tight_layout()
+    return fig
 
-    # EC
 
-    income_model = smf.ols(data=tmp, formula='Balance ~ Income').fit()
-    student_model = smf.ols(data=tmp, formula='Balance ~ Student').fit()
-    is_model = smf.ols(data=tmp, formula='Balance ~ Income*Student').fit()
-    print income_model.summary()
-    print '\n\n'
-    print student_model.summary()
-    print '\n\n'
-    print is_model.summary()
+def build_regression_report(report_name, relevant_col_names, training_data, training_answers):
+    '''
+        Given a report_name, a list of columns to regress on, and the required training_data
+        create a regression model using StatsModel. Plot the residuals and a QQ plot and write
+        the model.summary() to the report.
 
-    super_model = smf.ols(data=tmp, formula='Balance ~ Income*Student + Rating + Age')
-    answer = super_model.fit()
+        report_name: The name of the pdf
+        relevant_col_names: a list with the columns you care about in training_data
+        training_data: the training set
+        training_answers: y, assumed to be parallel to training_data
+    '''
+    report = PdfPages(OUTPUT_DIR + report_name + '.pdf')
+    reduced_dataset = training_data.filter(relevant_col_names)
 
-    original_model = smf.ols(data=tmp, formula='Balance ~ Income + Student + Rating*Age')
-    answer = original_model.fit()
+    model, data = build_model(training_answers, reduced_dataset)
+    summary_text = model.summary()
+    with open(OUTPUT_DIR + report_name + ".txt", "w") as text_file:
+        text_file.write(str(summary_text))
+
+    resid_fig = plot_resid(model, data)
+    report.savefig(resid_fig)
+    report.close()
 
 
 if __name__ == '__main__':
