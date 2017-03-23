@@ -8,6 +8,11 @@ from sklearn.metrics import mean_squared_error as mse
 import numpy as np
 import matplotlib.pyplot as plt
 
+# THIS WARNING SUPPRESSION IS SAFE ACCORDING TO:
+# https://github.com/scipy/scipy/issues/5998
+import warnings
+warnings.filterwarnings(action="ignore", module="scipy", message="^internal gelsd")
+
 
 def main(dataset_size, test_proportion):
     diabetes = load_diabetes()
@@ -30,11 +35,11 @@ def fit_regression(X, y, regression_class=LinearRegression, regularization_const
         X (pandas DataFrame): The data.
         y (pandas DataFrame or Series): The answers.
         regression_class (class): One of sklearn.linear_model.[LinearRegression, Ridge, Lasso]
-        Lambda: the regularization_const value (regularization parameter) for Ridge or Lasso. Called alpha by scikit learn
-                for interface reasons.
+        regularization_const: the regularization_const value (regularization parameter) for Ridge or Lasso.
+                              Called alpha by scikit learn for interface reasons.
 
         Return:
-            Something.
+            tuple, (the_fitted_regressor, mean(cross_val_score)).
     '''
     if regression_class is LinearRegression:
         predictor = regression_class()
@@ -49,12 +54,24 @@ def fit_regression(X, y, regression_class=LinearRegression, regularization_const
     return (predictor, np.mean(cross_scores_corrected))
 
 
-def plot_errors_by_lambda(X, y, test_proportion=0.25, lambda_values=None, regression_class=Ridge, ax=None):
-    if not lambda_values:
-        if regression_class is Lasso:
-            lambda_values = np.linspace(0.1, 10)
-        else:
-            lambda_values = np.logspace(-5, 3)
+def plot_errors_by_lambda(X, y, test_proportion=0.25, regression_class=Ridge, ax=None):
+    '''
+        Given a dataset, percent of test data to withold,a regression_class, and an
+        axes on which to plot -- fit the regression class to the provided data. Compute the cross_val_score
+        using mean_squared_error (and take the root of it), THEN take the trained regressor and use it to
+        predict the test data. Finally, plot the RMSE of the test data, and the cross_val_score's against
+        the different values of lambda.
+
+        X (pandas DataFrame): The data.
+        y (pandas DataFrame or Series): The answers.
+        regression_class (class): One of sklearn.linear_model.[LinearRegression, Ridge, Lasso]
+
+        Return: None
+    '''
+    if regression_class is Lasso:
+        lambda_values = np.linspace(0.1, 10)
+    else:
+        lambda_values = np.logspace(-5, 3)
 
     # Split the data into train/test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_proportion)
