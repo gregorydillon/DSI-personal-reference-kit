@@ -16,11 +16,15 @@ Can we design an experiment to answer these questions for the web team?
 
 In this example we do not have any real data on CTR, instead we're going to model CTR using a binomial distribution and generate data with different parameters `n` and `p` to serve as our sample size. This has some benefits in the learning context -- specifically that we KNOW the hidden distribution that our data should follow. If our experiments determine something that isn't __true__ then we'll know, and have something interesting to think about.
 
-In the real world this data might have been collected in a number of different ways, which may have their own strengths and drawbacks. Lets take a look at `data_generation.py` to see how this is done. (Spoiler alert, we're just using `scipy`).
+In the real world this data might have been collected in a number of different ways, which may have their own strengths and drawbacks. Lets take a look at `data_generation.py` to see how this is done.
+
+These generation steps will get more complex as we go on, to account for new assumptions and variables, but we start with a straightforward (if naive) series of Bernoulli trials.
 
 ## Part One: Experimental Design
 
-We're going to change the narrative about "Webby" many times during this example, to simulate different situations which we may really find ourselves in. First, lets pretend Webby is a __big__ company. We've got tons of traffic, tons of support, and tons of time. Assuming we have __everything__ we need at our disposal, whats the best experiment we can design?
+We're going to change the narrative about "Webby" many times during this example, to simulate different situations which we may really find ourselves in. These assumptions will range from  "Webby is a __big__ company, we have __everything__ we could ever ask for." to "Webby has very limited resources, do the best with what we've got!"
+
+Experiments in the wild all depend on your individual goals for these experiments. Entertaining both the "happy path" and more challenging situations can be very valuable.
 
 #### Scaffolding Our Test
 
@@ -30,4 +34,20 @@ __Null hypothesis__: the new website will not perform any differently compared t
 
 __Alternate hypothesis__: the new webpage will perform differently.
 
-Great, we know what we want to determine. Soon we're going to have to ask our web-team to gather some data for us. How much data are we going to ask for? How will we know when we've gathered enough to have strong results?
+Great, we know what we want to determine. Soon we're going to have to ask our web-team to gather some data for us. Before we go to the Webby team we need to answer some questions for ourselves.
+
+* What is "strong enough" evidence to keep the new design in favor of the old design?
+* What magnitude change in CTR is required before we care?
+* What is our tolerance for Type I and Type II error?
+* How much data are we going to ask for?
+
+#### Determining Sample Size
+
+Lets answer these questions for 3 scenarios (ultimately we'll write a function that can handle all three as well as any others). We want to know the minimum effect size that interests us, the confidence level we need to have, and the desired power of our experiment. 
+
+###### Big Company, Already Succeeding
+
+Because Webby is experimenting with a critical page, and we're a big company, we want to hold ourselves to a high standard of confidence. We have millions of daily active users, even a 0.1% percent change might mean a change in millions of dollars revenue.
+
+```
+```
