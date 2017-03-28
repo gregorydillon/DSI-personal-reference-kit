@@ -83,7 +83,7 @@ __Interaction Terms__: We're using the StatsModels formula API which makes it ea
 
 ```python
 col_to_predict = 'SalePrice'
-  favorite_so_far = '''
+favorite_so_far = '''
   SalePrice ~ YearMade +
           Modernity +
           MachineHoursCurrentMeter +
