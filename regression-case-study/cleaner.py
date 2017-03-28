@@ -30,7 +30,7 @@ def clean_all(df, apply_all_specific_transforms=None):
 
     # TRACTOR specific
     # TODO: Don't allow default function.
-    apply_all_specific_transforms = apply_all_specific_transforms or apply_all_specific_tractor_transforms()
+    apply_all_specific_transforms = apply_all_specific_transforms or apply_all_specific_tractor_transforms
 
     apply_all_specific_transforms(copy)
 

@@ -1,65 +1,58 @@
-import statsmodels.formula.api as smf
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+import statsmodels.formula.api as smf
+import cleaner as cln
 
-from load_data import load_clean_from_zip
-
-# Best so far -- .499 error
-# Credit to Vy Nguyen
-favorite_so_far = '''
-SalePrice ~ YearMade +
-        Modernity +
-        MachineHoursCurrentMeter +
-        ProductGroup +
-        fiProductClassDesc +
-        Enclosure +
-        Hydraulics +
-        _units*_measurement
-'''
 
 def main():
-    training_data = load_clean_from_zip('data/tractor_data.zip')
-
-
-def root_mean_log_squared_error(test_values, predictions):
+    # Best so far -- .499 error
+    # Credit to Vy Nguyen
+    col_to_predict = 'SalePrice'
+    favorite_so_far = '''
+    SalePrice ~ YearMade +
+            Modernity +
+            MachineHoursCurrentMeter +
+            ProductGroup +
+            Enclosure +
+            Hydraulics +
+            _units*_measurement
     '''
-        compute the log-root-mean-squared error metric. This function
-        doesn't punish being WAY off on some values as highly.
-    '''
+    tractor_data = pd.read_csv('data/train.csv')
+    tractor_data = cln.clean_all(tractor_data)
 
-    log_diff = np.log(predictions + 1) - np.log(test_values + 1)
-    return np.sqrt(np.mean(log_diff ** 2))
+    model, score = test_formula(favorite_so_far, tractor_data, col_to_predict)
+    print "LRMSE: {}".format(score)
 
 
-def model_and_score_from_formula(formula, training_data, test_values):
+def test_formula(formula, training_data, column_being_predicted):
     '''
         Accept a formula in the StatsModels.formula.api style, some training data and
         some test values that must match the value being predicted by the formula.
+
+        returns: trained_model, cross_scores, test_score
     '''
-    model = smf.ols(formula=formula, data=training_data).fit()
-    predictions = model.predict(test_values)
-    score = root_mean_log_squared_error(test_values, predictions)
+    # Formula requires that we include the field being predicted in the X data both times
+    # So we just include the name of the column which is kind of nice honestly.
+    X_train, X_test, _, _ = train_test_split(training_data, training_data[column_being_predicted], test_size=.10)
+    model = smf.ols(formula=formula, data=X_train).fit()
+
+    test_values = X_test[column_being_predicted]
+    score = root_mean_log_squared_error(model, X_test, test_values)
 
     return (model, score)
 
 
-def plot_resid(model, training_data):
+def root_mean_log_squared_error(model, X, y):
     '''
-        Given a trained StatsModel linear regression model, plot the residual error
-        in a scatter plot as well as a qqplot
-
-        model: a trained StatsModel linear regression model.
-        training_data: the input data which was used to train the model.
-
-        returns: the figure upon which the residuals were drawn
+        compute the log-root-mean-squared error metric. This function
+        doesn't punish being WAY off on some values as highly.
     '''
-    fig, ax_list = plt.subplots(1, 2)
+    predictions = model.predict(X)
+    log_diff = np.log(predictions + 1) - np.log(y + 1)
+    return np.sqrt(np.mean(log_diff ** 2))
 
-    y_hat = model.predict(training_data)
-    resid = model.outlier_test()['student_resid']
 
-    ax_list[0].scatter(y_hat, resid, alpha=.2)
-    ax_list[0].axhline(0, linestyle='--')
-    sm.qqplot(resid, line='s', ax=ax_list[1])
-
-    fig.tight_layout()
-    return fig
+if __name__ == '__main__':
+    main()
