@@ -91,10 +91,10 @@ favorite_so_far = '''
           Enclosure +
           Hydraulics +
           _units*_measurement  # INTERACTION TERM -- consider each units/measurements combo individually
-  '''
+'''
 
-  model, score = test_formula(favorite_so_far, tractor_data, col_to_predict)
-  print "LRMSE: {}".format(score)
+model, score = test_formula(favorite_so_far, tractor_data, col_to_predict)
+print "LRMSE: {}".format(score)
 ```
 
 This lets the algorithm consider two features in conjunction rather than just as a linear combination.
