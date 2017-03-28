@@ -144,7 +144,7 @@ def apply_all_specific_tractor_transforms(tractor_data):
     '''
     tractor_data['Tire_Size'] = tractor_data['Tire_Size'].apply(combine_10_inch_tire_size)
     tractor_data['Modernity'] = tractor_data['YearMade'].apply(year_buckets_cat_map)
-    tractor_data['Enclosure_Reduced'] = tractor_data['Enclosure'].apply(enclosure_ac_map)
+    tractor_data['AC Status'] = tractor_data['Enclosure'].apply(enclosure_ac_map)
     tractor_data['_units'] = tractor_data['fiProductClassDesc'].apply(product_descr_to_units)
     tractor_data['_measurement'] = tractor_data['fiProductClassDesc'].apply(product_descr_to_mean)
 

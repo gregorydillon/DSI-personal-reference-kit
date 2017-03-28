@@ -18,5 +18,9 @@ SalePrice ~ YearMade +
 
 simple = "SalePrice ~ Modernity"
 
+# print tractor_data.info()
+# print tractor_data.description()
+# print tractor_data.head(5)
+
 # model, score = test_formula(simple, tractor_data, col_to_predict)
 # print score
