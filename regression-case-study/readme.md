@@ -12,7 +12,7 @@ Then run the validator main:
 python validate.py
 ```
 
-There is unfortnuately no cross validation as of yet, just a random sample of test data left out each time you test a formula. For trying many formulas I suggest using `validate_interactive.py` in order to keep cleaned data in memory instead of loading it up every time (which happens if you run the main in `validate.py`):
+There is unfortunately no cross validation as of yet, just a random sample of test data left out each time you test a formula. For trying many formulas I suggest using `validate_interactive.py` in order to keep cleaned data in memory instead of loading it up every time (which happens if you run the main in `validate.py`):
 
 ```
 ipython -i validate_interactive
