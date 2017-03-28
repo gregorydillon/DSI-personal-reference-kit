@@ -1,6 +1,5 @@
 import pandas as pd
 import re
-from zipfile import ZipFile
 
 # Configuration Parameters -- This is not the best design pattern
 # TODO: Refactor to command-line options
@@ -12,15 +11,14 @@ NUMERICAL_CATEGORICAL_COLUMNS = [
 ]
 
 
-def clean_all(df, fields_to_clone, apply_all_specific_transforms=None):
+def clean_all(df, apply_all_specific_transforms=None):
     '''
-        Given a DataFrame and a list of columns to clone, return a copy
-        of the dataframe with copies of that field as strings, for categorical
+        Given a DataFrame use NUMERICAL_CATEGORICAL_COLUMNS to return a copy
+        of the dataframe with copies of that field as strings for categorical
         classification. Additionally, perform several operations that fix known errors
         specific to the Tractors dataset. (Though there are many more yet)
 
         df (DataFrame): The dataframe
-        fields_to_clone (list[str]): the name of the columns to be cloned.
 
         return (DataFrame): a df with the new, better, expanded data
     '''
