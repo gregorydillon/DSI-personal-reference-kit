@@ -4,7 +4,7 @@ import re
 # Configuration Parameters -- This is not the best design pattern
 # TODO: Refactor to command-line options
 OUTPUT_UNKNOWN_VALUE = 'Unknown'
-INPUT_NONE_VALUES = ['None or Unspecified', 'Unspecified', '1000', 'nan', '', 'Unknown']
+INPUT_NONE_VALUES = ['None or Unspecified', 'Unspecified', 'nan', '', 'Unknown']
 KNOWN_INVALID_ENTRY_VALUES = ['#NAME?']
 NUMERICAL_CATEGORICAL_COLUMNS = [
     'ModelID', 'datasource', 'YearMade', 'auctioneerID',
