@@ -13,7 +13,6 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, AdaBoostRegressor
 import statsmodels.formula.api as smf
 
-
 import validate
 import cleaner as cln
 
@@ -71,10 +70,7 @@ def grid_search_regressors():
         np.isnan(X.MachineHoursCurrentMeter)
     ] = np.mean(X.MachineHoursCurrentMeter[~np.isnan(X.MachineHoursCurrentMeter)])
 
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.1)  # Leave out 10% for testing later
-
-    # SMALL INTENTIONALLY TO TEST SHIIIIIT
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.7)  # Leave out 10% for testing later
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.1)  # Leave out 10% for testing later
 
     rf_grid, rf_model = random_forest_grid_search()
     gb_grid, gb_model = gradient_boost_grid_search()
@@ -88,6 +84,10 @@ def grid_search_regressors():
 
     ab_gs = validate.grid_search(ab_model, ab_grid, X_train, y_train)
     print 'best parameters:', ab_gs.best_params_
+
+    # TODO: Cross validate best ones on all the training data.
+    # TODO: Pickle the BEST one
+    # TODO: Better reporting
 
 
 def random_forest_grid_search():
@@ -106,7 +106,7 @@ def gradient_boost_grid_search():
     gradient_boost_grid = {
         'loss': ['ls', 'lad', 'huber', 'quantile'],
         'learning_rate': [.001, .01, .1],
-        'n_estimators': [100, 500, 1000],
+        'n_estimators': [50, 100, 1000],
         'max_depth': [1, 3],
         'min_samples_split': [2, 4],
         'max_features': ['sqrt'],
@@ -118,18 +118,18 @@ def gradient_boost_grid_search():
 
 def ada_boost_tree_grid_search():
     ada_boost_tree_grid = {
-        'base_estimator__max_features': ['sqrt', 'log2', 'auto'],
-        'base_estimator__criterion': ['gini', 'entropy'],
+        'base_estimator__max_features': ['sqrt'],
         'base_estimator__splitter': ['best', 'random'],
         'base_estimator__min_samples_split': [2, 4],
-        'base_estimator__max_depth': [1, 3, 5],
-        'n_estimators': [100, 500, 1000],
+        'base_estimator__max_depth': [1, 3],
+        'n_estimators': [50, 100, 1000],
         'learning_rate': [.001, .01, .1],
         'loss': ['linear', 'square', 'exponential']
     }
     abr = AdaBoostRegressor(DecisionTreeRegressor())
 
     return ada_boost_tree_grid, abr
+
 
 if __name__ == '__main__':
     grid_search_regressors()

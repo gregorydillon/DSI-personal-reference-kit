@@ -108,7 +108,7 @@ def product_descr_to_units(desc_value):
 
         All Credit to Alan Jennings
     '''
-    result_name = re.search('[^0-9+]+$', desc_value)  #grab units from the tail..
+    result_name = re.search('[^0-9+]+$', desc_value)  # grab units from the tail..
     if result_name:
         units = result_name.group(0)
         return units
@@ -128,7 +128,6 @@ def product_descr_to_mean(desc_value):
         value = (float(result.group(1)) + float(result.group(2))) / 2
         return value
     else:
-        #for cases "16.0 + Ft Standard Digging Depth"
         result2 = re.search('([0-9\.]+)\s?\+', desc_value)
         if result2:
             value = result2.group(1)
