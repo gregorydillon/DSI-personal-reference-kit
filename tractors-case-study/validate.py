@@ -1,4 +1,4 @@
-'import numpy as np
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 import statsmodels.formula.api as smf
@@ -49,20 +49,16 @@ def validate_formula(formula, training_data, column_being_predicted, cross_val_n
 
 
 def grid_search(model, feature_dict, train_x, train_y):
-    rf_gridsearch = GridSearchCV(
+    gscv = GridSearchCV(
         model,
         feature_dict,
         n_jobs=-1,
         verbose=True,
-        scoring='neg_mean_squared_error'
+        scoring=root_mean_log_squared_error
     )
 
-    rf_gridsearch.fit(train_x, train_y)
-
-    print 'best parameters:', rf_gridsearch.best_params_
-
-    best_rf_model = rf_gridsearch.best_estimator_
-    return best_rf_model
+    gscv.fit(train_x, train_y)
+    return gscv
 
 
 def cross_v_scores(regressors, training_data, training_targets):
@@ -72,7 +68,7 @@ def cross_v_scores(regressors, training_data, training_targets):
 
 
 def cross_validate(estimator, training_data, test_targets):
-    mse = cross_val_score(estimator, X=training_data, y=test_targets, scoring='neg_mean_squared_error')
+    mse = cross_val_score(estimator, X=training_data, y=test_targets, scoring=root_mean_log_squared_error)
     r2 = cross_val_score(estimator, X=training_data, y=test_targets, scoring='r2')
 
     return (-1 * np.mean(mse), np.mean(r2))
