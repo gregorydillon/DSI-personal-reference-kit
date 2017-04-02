@@ -78,16 +78,33 @@ def grid_search_regressors():
 
     rf_gs = validate.grid_search(rf_model, rf_grid, X_train, y_train)
     print 'best parameters:', rf_gs.best_params_
+    # best parameters: {'max_features': 'log2', 'min_samples_split': 4, 'n_estimators': 50, 'min_samples_leaf': 2}
 
     gb_gs = validate.grid_search(gb_model, gb_grid, X_train, y_train)
     print 'best parameters:', gb_gs.best_params_
+    # best parameters: {'loss': 'quantile', 'learning_rate': 0.001, 'n_estimators': 50, 'max_features': 'sqrt', 'min_samples_split': 4, 'max_depth': 1}
 
     ab_gs = validate.grid_search(ab_model, ab_grid, X_train, y_train)
     print 'best parameters:', ab_gs.best_params_
 
-    # TODO: Cross validate best ones on all the training data.
-    # TODO: Pickle the BEST one
-    # TODO: Better reporting
+    best_forest = rf_gs.best_estimator_
+    best_gradient_boost = gb_gs.best_estimator_
+    best_ada_boost = ab_gs.best_estimator_
+    estimators = [best_forest, best_gradient_boost, best_ada_boost]
+    best_score, best_regressor = select_best_regressor(estimators,  X_train, X_test, y_train, y_test)
+
+    print "Best Regressor: {}".format(best_regressor.__class__.__name__)
+    print "Score: {best_score}"
+
+
+def select_best_regressor(estimators, X_train, X_test, y_train, y_test):
+    scores = []
+    for e in estimators:
+        e.fit(X_train, y_train)
+        s = e.score(X_test, y_test, scoring=validate.root_mean_log_squared_error)
+        scores.append((s, e))
+
+    return min(scores)
 
 
 def random_forest_grid_search():
