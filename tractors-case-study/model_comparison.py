@@ -23,6 +23,8 @@ def regression_formula_model(tractor_data):
     There are specific validations for using this model, which LEAVES the column being
     predicted IN the dataset -- since it's specified in the formula
     '''
+    # TODO refactor to use the scikit learn version, to be able to more directly compare the
+    # linear regression model to the other models found here.
     col_to_predict = 'SalePrice'
     favorite_so_far = '''
     SalePrice ~ YearMade +
@@ -38,37 +40,28 @@ def regression_formula_model(tractor_data):
     return model, col_to_predict
 
 
+def cross_validate_best_known():
+    tractor_data = pd.read_csv('data/train.csv')
+    tractor_data = cln.clean_all(tractor_data)
+    X = tractor_data
+    y = tractor_data.pop('SalePrice')
+
+    rf = RandomForestRegressor(max_features=2, min_samples_split=4, n_estimators=50, min_samples_leaf=2)
+    gb = GradientBoostingRegressor(loss='quantile', learning_rate=0.001, n_estimators=50, max_features='sqrt', min_samples_split=4, max_depth=1)
+    ada_tree_backing = DecisionTreeRegressor(max_features='sqrt', splitter='random', min_samples_split=4, max_depth=3)
+    ab = AdaBoostRegressor(ada_tree_backing, learning_rate=0.1, loss='square', n_estimators=1000)
+
+    validate.cross_v_scores([rf, gb, ab], X, y)
+    # RandomForestRegressor -- RMLSE: -0.596797712098, R2: 0.0272065373946
+    # GradientBoostingRegressor -- RMLSE: -0.996134592541, R2: -2.37202164829
+    # AdaBoostRegressor -- RMLSE: -0.706385708459, R2: -0.103966980393
+
+
 def grid_search_regressors():
     tractor_data = pd.read_csv('data/train.csv')
     tractor_data = cln.clean_all(tractor_data)
-
-    # Just select the data we decided previously we care about
-    # Room for improvement here
-    X = tractor_data.filter([
-        'Modernity',
-        'MachineHoursCurrentMeter',
-        'ProductGroup',
-        'Enclosure',
-        'Hydraulics',
-        '_units',
-        '_measurement'
-    ])
+    X = tractor_data
     y = tractor_data.pop('SalePrice')
-
-    # DUMMIFY, TODO: move to cleanup?
-    to_dummy = [
-        'Modernity',
-        'ProductGroup',
-        'Enclosure',
-        'Hydraulics',
-        '_units'
-    ]
-    X = pd.get_dummies(X, columns=to_dummy)
-
-    # Imput NaN's TODO: Move to cleanup?
-    X.MachineHoursCurrentMeter[
-        np.isnan(X.MachineHoursCurrentMeter)
-    ] = np.mean(X.MachineHoursCurrentMeter[~np.isnan(X.MachineHoursCurrentMeter)])
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.1)  # Leave out 10% for testing later
 
@@ -86,6 +79,7 @@ def grid_search_regressors():
 
     ab_gs = validate.grid_search(ab_model, ab_grid, X_train, y_train)
     print 'best parameters:', ab_gs.best_params_
+    # best parameters: {'loss': 'square', 'base_estimator__min_samples_split': 4, 'base_estimator__max_depth': 3, 'learning_rate': 0.1, 'base_estimator__max_features': 'sqrt', 'n_estimators': 1000, 'base_estimator__splitter': 'random'}
 
     best_forest = rf_gs.best_estimator_
     best_gradient_boost = gb_gs.best_estimator_
@@ -101,7 +95,7 @@ def select_best_regressor(estimators, X_train, X_test, y_train, y_test):
     scores = []
     for e in estimators:
         e.fit(X_train, y_train)
-        s = e.score(X_test, y_test, scoring=validate.root_mean_log_squared_error)
+        s = validate.root_mean_log_squared_error(e, X_test, y_test)
         scores.append((s, e))
 
     return min(scores)
@@ -149,4 +143,5 @@ def ada_boost_tree_grid_search():
 
 
 if __name__ == '__main__':
-    grid_search_regressors()
+    # grid_search_regressors()
+    cross_validate_best_known()

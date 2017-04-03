@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 
 
 def histograms(df, plot_width, plot_height):
@@ -25,11 +24,6 @@ def histograms(df, plot_width, plot_height):
         plt.tight_layout()
         ax.set_xlabel(col_name)
 
-
-
-    # report = PdfPages('TEST_PLOTS.pdf')
-    # report.savefig(fig)
-    # report.close()
     plt.show()
 
     return fig

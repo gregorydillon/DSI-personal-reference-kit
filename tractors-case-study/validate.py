@@ -64,12 +64,12 @@ def grid_search(model, feature_dict, train_x, train_y):
 def cross_v_scores(regressors, training_data, training_targets):
     for r in regressors:
         mse, r2 = cross_validate(r, training_data, training_targets)
-        print('{} -- MSE: {}, R2: {}'.format(r.__class__.__name__, mse, r2))
+        print('{} -- RMLSE: {}, R2: {}'.format(r.__class__.__name__, mse, r2))
 
 
-def cross_validate(estimator, training_data, test_targets):
-    mse = cross_val_score(estimator, X=training_data, y=test_targets, scoring=root_mean_log_squared_error)
-    r2 = cross_val_score(estimator, X=training_data, y=test_targets, scoring='r2')
+def cross_validate(estimator, training_data, training_targets):
+    mse = cross_val_score(estimator, X=training_data, y=training_targets, scoring=root_mean_log_squared_error)
+    r2 = cross_val_score(estimator, X=training_data, y=training_targets, scoring='r2')
 
     return (-1 * np.mean(mse), np.mean(r2))
 

@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import re
 
@@ -31,15 +32,97 @@ def clean_all(df, apply_all_specific_transforms=None):
     # TRACTOR specific
     # TODO: Don't allow default function.
     apply_all_specific_transforms = apply_all_specific_transforms or apply_all_specific_tractor_transforms
-
     apply_all_specific_transforms(copy)
+
+    # THE ORDER OF THESE OPERATIONS CAN BE IMPORTANT
+    copy = remove_uninformative_rows(copy)
+    copy = remove_uninformative_columns(copy)
+    copy = impute_median_all(copy)
+    copy = dummify(copy)
 
     return copy
 
 
+def remove_uninformative_rows(df):
+    '''
+    There are a number of cases where there just isn't valuable data. We don't want to waste time
+    on the noise
+    '''
+    # TODO: fiModelDescription/fiModelBase/fiModelSeries -- There are many where this info only appears once.
+    # TODO: Unknown product size
+    # TODO: Unknown Drive_System
+    # TODO: Unknown Tire_Size
+    # TODO: YearMade == 1000
+    # TODO: _units contains "Unidentified"
+    # Many of these todos cannot be todid, if we do in fact do them all, it leaves us without any data
+    reasonable_to_prune = ['Hydraulics', 'Transmission', 'Enclosure', 'UsageBand', 'YearMade_categorical']
+    for cname in reasonable_to_prune:
+        if df[cname].dtype == object:
+            df = df[df[cname] != 'Unknown']
+
+    df = df[df['YearMade'] != 1000]
+    return df
+
+def remove_uninformative_columns(df):
+    # Most of these are unknown on the vast majority of rows -- makes it tough to learn
+    uninformative_cols = ['Forks', 'Pad_Type', 'Ride_Control', 'Turbocharged', 'Blade_Extension', 'Blade_Width', 'Enclosure_Type',
+        'Engine_Horsepower', 'Pushblock', 'Ripper', 'Scarifier', 'Tip_Control', 'Coupler', 'Coupler_System',
+        'Grouser_Tracks', 'Hydraulics_Flow', 'Track_Type', 'Thumb', 'Pattern_Changer', 'Grouser_Type', 'Backhoe_Mounting',
+        'Blade_Type', 'Travel_Controls', 'Differential_Type', 'Steering_Controls', 'Undercarriage_Pad_Width'
+    ]
+
+    for cname in uninformative_cols:
+        del df[cname]
+
+    return df
+
+def impute_median_all(df):
+    for cname in df.columns:
+        if df[cname].dtype != object:
+            med_val = np.median(df[cname][~np.isnan(df[cname])])
+            df[cname][np.isnan(df[cname])] = med_val
+
+    return df
+
+def dummify(df):
+    obj_cols = []
+    for cname in df.columns:
+        if df[cname].dtype == object:
+            obj_cols.append(cname)
+
+    df = pd.get_dummies(df, columns=obj_cols)
+    # for cname in obj_cols:
+    #     del df[cname]
+
+    return df
+
+def add_sale_count(df):
+    # TODO: Add column for "Sale Count" -- how many times had that tractor changed hands at for each
+    # particular sale record.
+    pass
+
+
+def add_sale_year(df):
+    # TODO: Parse saledate column to extract just the sale year
+    pass
+
+
+def get_multi_sale_tractors(df):
+    '''
+    return a dataframe that only has records for tractors whose machine id appears more than once
+
+    '''
+    machine_ids = df.MachineID
+    cnt = machine_ids.value_counts()
+    multi_sale = cnt[cnt > 1]
+    multi_sale_tractors = df[df['MachineID'].isin(multi_sale.index)]
+    return multi_sale_tractors
+
+
 def merge_all_none_types(df):
     '''
-    Using Configuration parameters above, take all the
+    Using Configuration parameters above
+     take all the
     '''
     copy = df.copy()
     for col_name in df:
@@ -74,7 +157,7 @@ def enclosure_ac_map(value):
         Maps the Enclosure column to an educated guess about the Air Conditioning status
         of the tractor's enclosure.
     '''
-    if 'AC' in ['EROPS w AC', 'EROPS AC']:
+    if value in ['EROPS w AC', 'EROPS AC']:
         return 'Has AC'
     elif value in ['OROPS', 'OROPS', 'EROPS', 'NO ROPS']:
         return 'Likely No AC'
@@ -108,6 +191,10 @@ def product_descr_to_units(desc_value):
 
         All Credit to Alan Jennings
     '''
+    # TODO: These often fetch things like: Hydraulic Excavator, Track - Unidentified -- which
+    # Have a direct mapping to a proper unit, but are not in the text.
+    # Extract this mapping to make this more robust
+    # It might be easier to do this simply using ProductGroupDesc
     result_name = re.search('[^0-9+]+$', desc_value)  # grab units from the tail..
     if result_name:
         units = result_name.group(0)
