@@ -6,7 +6,6 @@ fine tuning their paramters using tactics like GridSearchCV.
 Once optimal models have been found within each model type the optimal versions
 of these models are cross validated, and the results compared across model types.
 '''
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeRegressor
@@ -41,6 +40,13 @@ def regression_formula_model(tractor_data):
 
 
 def cross_validate_best_known():
+    '''
+        import and clean the tractor data, then do a corss validation on each of the three models we are
+        training here. A RandomForest, a GradientBoost, and an AdaBoost backed by a DecisionTree. Print
+        the scores.
+
+        The parameters we're using here are the "best" that we've found so far using a grid search.
+    '''
     tractor_data = pd.read_csv('data/train.csv')
     tractor_data = cln.clean_all(tractor_data)
     X = tractor_data
@@ -58,6 +64,13 @@ def cross_validate_best_known():
 
 
 def grid_search_regressors():
+    '''
+        import and clean the tractor data, then do a corss validation on each of the three models we are
+        training here. A RandomForest, a GradientBoost, and an AdaBoost backed by a DecisionTree. Print
+        the best parameters found from this GridSearch.
+
+        WARNING TAKES FOREVER
+    '''
     tractor_data = pd.read_csv('data/train.csv')
     tractor_data = cln.clean_all(tractor_data)
     X = tractor_data
@@ -80,25 +93,6 @@ def grid_search_regressors():
     ab_gs = validate.grid_search(ab_model, ab_grid, X_train, y_train)
     print 'best parameters:', ab_gs.best_params_
     # best parameters: {'loss': 'square', 'base_estimator__min_samples_split': 4, 'base_estimator__max_depth': 3, 'learning_rate': 0.1, 'base_estimator__max_features': 'sqrt', 'n_estimators': 1000, 'base_estimator__splitter': 'random'}
-
-    best_forest = rf_gs.best_estimator_
-    best_gradient_boost = gb_gs.best_estimator_
-    best_ada_boost = ab_gs.best_estimator_
-    estimators = [best_forest, best_gradient_boost, best_ada_boost]
-    best_score, best_regressor = select_best_regressor(estimators,  X_train, X_test, y_train, y_test)
-
-    print "Best Regressor: {}".format(best_regressor.__class__.__name__)
-    print "Score: {best_score}"
-
-
-def select_best_regressor(estimators, X_train, X_test, y_train, y_test):
-    scores = []
-    for e in estimators:
-        e.fit(X_train, y_train)
-        s = validate.root_mean_log_squared_error(e, X_test, y_test)
-        scores.append((s, e))
-
-    return min(scores)
 
 
 def random_forest_grid_search():
@@ -144,4 +138,4 @@ def ada_boost_tree_grid_search():
 
 if __name__ == '__main__':
     # grid_search_regressors()
-    cross_validate_best_known()
+    # cross_validate_best_known()

@@ -45,8 +45,11 @@ def clean_all(df, apply_all_specific_transforms=None):
 
 def remove_uninformative_rows(df):
     '''
-    There are a number of cases where there just isn't valuable data. We don't want to waste time
-    on the noise
+        Given a dataframe assumed to have been loaded from our Tractor Data -- remove rows that don't provide
+        much information. Specifically these are rows that have been determined to have "unknown" values in
+        columns we have decided are important to our regression models.
+
+        returns DataFrame -- the input dataframe without such rows
     '''
     # TODO: fiModelDescription/fiModelBase/fiModelSeries -- There are many where this info only appears once.
     # TODO: Unknown product size
@@ -64,6 +67,14 @@ def remove_uninformative_rows(df):
     return df
 
 def remove_uninformative_columns(df):
+    '''
+        Given a dataframe assumed to have been loaded from our Tractor Data -- remove columns that don't provide
+        much information. Specifically these are columns that have been determined to have a vast majority of
+        "unknown" values in them, or columns that we determined experimentally do not contribute much to our
+        regression models.
+
+        returns DataFrame -- the input dataframe without such columns
+    '''
     # Most of these are unknown on the vast majority of rows -- makes it tough to learn
     uninformative_cols = ['Forks', 'Pad_Type', 'Ride_Control', 'Turbocharged', 'Blade_Extension', 'Blade_Width', 'Enclosure_Type',
         'Engine_Horsepower', 'Pushblock', 'Ripper', 'Scarifier', 'Tip_Control', 'Coupler', 'Coupler_System',
@@ -77,6 +88,12 @@ def remove_uninformative_columns(df):
     return df
 
 def impute_median_all(df):
+    '''
+        Given a dataframe, find all the numeric types and impute the median values
+        for any rows which are nan.
+
+        return DataFrame -- the dataframe with all the nan values set to the imputed median
+    '''
     for cname in df.columns:
         if df[cname].dtype != object:
             med_val = np.median(df[cname][~np.isnan(df[cname])])
@@ -85,6 +102,13 @@ def impute_median_all(df):
     return df
 
 def dummify(df):
+    '''
+        Given a dataframe, for all the columns which are not numericly typed already,
+        create dummies. This will NOT remove one of the dummies which is required for
+        linear regression.
+
+        returns DataFrame -- a dataframe with all non-numeric columns swapped into dummy columns
+    '''
     obj_cols = []
     for cname in df.columns:
         if df[cname].dtype == object:
@@ -95,16 +119,6 @@ def dummify(df):
     #     del df[cname]
 
     return df
-
-def add_sale_count(df):
-    # TODO: Add column for "Sale Count" -- how many times had that tractor changed hands at for each
-    # particular sale record.
-    pass
-
-
-def add_sale_year(df):
-    # TODO: Parse saledate column to extract just the sale year
-    pass
 
 
 def get_multi_sale_tractors(df):
@@ -235,3 +249,15 @@ def apply_all_specific_tractor_transforms(tractor_data):
     tractor_data['_measurement'] = tractor_data['fiProductClassDesc'].apply(product_descr_to_mean)
 
     return tractor_data
+
+
+### Aspirational Functions to Implement:
+def add_sale_count(df):
+    # TODO: Add column for "Sale Count" -- how many times had that tractor changed hands at for each
+    # particular sale record.
+    pass
+
+
+def add_sale_year(df):
+    # TODO: Parse saledate column to extract just the sale year
+    pass
