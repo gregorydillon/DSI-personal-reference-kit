@@ -47,7 +47,7 @@ def cross_validate_best_known():
     y = tractor_data.pop('SalePrice')
 
     rf = RandomForestRegressor(max_features=2, min_samples_split=4, n_estimators=50, min_samples_leaf=2)
-    gb = GradientBoostingRegressor(loss='quantile', learning_rate=0.001, n_estimators=50, max_features='sqrt', min_samples_split=4, max_depth=1)
+    gb = GradientBoostingRegressor(loss='quantile', learning_rate=0.0001, n_estimators=50, max_features='log2', min_samples_split=2, max_depth=1)
     ada_tree_backing = DecisionTreeRegressor(max_features='sqrt', splitter='random', min_samples_split=4, max_depth=3)
     ab = AdaBoostRegressor(ada_tree_backing, learning_rate=0.1, loss='square', n_estimators=1000)
 
@@ -75,7 +75,7 @@ def grid_search_regressors():
 
     gb_gs = validate.grid_search(gb_model, gb_grid, X_train, y_train)
     print 'best parameters:', gb_gs.best_params_
-    # best parameters: {'loss': 'quantile', 'learning_rate': 0.001, 'n_estimators': 50, 'max_features': 'sqrt', 'min_samples_split': 4, 'max_depth': 1}
+    # best parameters {'loss': 'quantile', 'learning_rate': 0.0001, 'n_estimators': 50, 'max_features': 'log2', 'min_samples_split': 2, 'max_depth': 1}
 
     ab_gs = validate.grid_search(ab_model, ab_grid, X_train, y_train)
     print 'best parameters:', ab_gs.best_params_
@@ -116,11 +116,11 @@ def random_forest_grid_search():
 def gradient_boost_grid_search():
     gradient_boost_grid = {
         'loss': ['ls', 'lad', 'huber', 'quantile'],
-        'learning_rate': [.001, .01, .1],
-        'n_estimators': [50, 100, 1000],
+        'learning_rate': [.0001, .001, .01, .1, 1],
+        'n_estimators': [50, 100, 1000, 10000],
         'max_depth': [1, 3],
-        'min_samples_split': [2, 4],
-        'max_features': ['sqrt'],
+        'min_samples_split': [2, 4, 10],
+        'max_features': ['sqrt', 'log2'],
     }
     gb = GradientBoostingRegressor()
 
